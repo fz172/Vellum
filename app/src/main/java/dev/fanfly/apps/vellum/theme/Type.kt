@@ -1,4 +1,4 @@
-package dev.fanfly.apps.vellum.ui.theme
+package dev.fanfly.apps.vellum.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

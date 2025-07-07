@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import dagger.hilt.android.AndroidEntryPoint
-import dev.fanfly.apps.vellum.ui.theme.VellumTheme
+import dev.fanfly.apps.vellum.theme.VellumTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
