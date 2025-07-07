@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package dev.fanfly.apps.vellum.proto;
+
+option java_package = "dev.fanfly.apps.vellum.proto";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "log_category.proto";
+
+// Represents a single log entry.
+message LogEntry {
+  google.protobuf.Timestamp create_time = 1;
+
+  LogCategory category = 2;
+
+  // The log text.
+  string text = 3;
+}

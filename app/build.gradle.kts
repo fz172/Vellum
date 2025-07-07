@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.id
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
@@ -51,6 +53,7 @@ dependencies {
   implementation(libs.androidx.material3)
   implementation(libs.hilt.android)
   implementation(libs.protobuf.javalite)
+  implementation(libs.protobuf.kotlin.lite)
   kapt(libs.hilt.compiler)
 
   testImplementation(libs.junit)
@@ -62,15 +65,27 @@ dependencies {
   debugImplementation(libs.androidx.ui.test.manifest)
 }
 
-// Add this block to configure Protobuf code generation
+// Add this new block to configure the Kotlin Protobuf generator
 protobuf {
   protoc {
+    // The version of protoc should match the version of your protobuf-kotlin-lite library.
     artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
   }
+
+  // This block configures the protoc task to generate Kotlin code.
   generateProtoTasks {
     all().forEach { task ->
       task.builtins {
-        create("java") {
+        // Enable the built-in Kotlin generator.
+        id("kotlin") {
+          // Use the "lite" option to generate code for the lite runtime,
+          // which corresponds to your `protobuf-kotlin-lite` dependency.
+          option("lite")
+        }
+        // Enable the built-in Java generator.
+        id("java") {
+          // Use the "lite" option to generate code for the lite runtime,
+          // which corresponds to your `protobuf-javalite` dependency.
           option("lite")
         }
       }
