@@ -7,4 +7,6 @@ sealed class NavScreen(val routing: String) {
 
   object LogList : NavScreen("log_list")
   object AddLog : NavScreen("add_log")
+
+  object ArtificialHorizon : NavScreen("artificial_horizon")
 }

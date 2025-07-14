@@ -54,6 +54,9 @@ dependencies {
   implementation(libs.hilt.android)
   implementation(libs.protobuf.javalite)
   implementation(libs.protobuf.kotlin.lite)
+  implementation(libs.androidx.ui.tooling.preview)
+  implementation(libs.androidx.material3)
+  implementation(libs.androidx.navigation.compose)
   kapt(libs.hilt.compiler)
 
   testImplementation(libs.junit)
