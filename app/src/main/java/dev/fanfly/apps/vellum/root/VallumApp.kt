@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.fanfly.apps.vellum.artificialhorizon.ui.ArtificialHorizonDisplay
-import dev.fanfly.apps.vellum.nav.NavScreen
+import dev.fanfly.apps.vellum.pfd.PrimaryDisplay
+import dev.fanfly.apps.vellum.root.nav.NavScreen
 
 @Composable
 fun VallumApp() {
@@ -14,10 +14,10 @@ fun VallumApp() {
 
   NavHost(
     navController,
-    startDestination = NavScreen.ArtificialHorizon.routing
+    startDestination = NavScreen.PFD.routing
   ) {
-    composable(NavScreen.ArtificialHorizon.routing) {
-      ArtificialHorizonDisplay()
+    composable(NavScreen.PFD.routing) {
+      PrimaryDisplay()
     }
   }
 }

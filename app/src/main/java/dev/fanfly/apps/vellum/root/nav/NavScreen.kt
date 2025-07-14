@@ -1,4 +1,4 @@
-package dev.fanfly.apps.vellum.nav
+package dev.fanfly.apps.vellum.root.nav
 
 sealed class NavScreen(val routing: String) {
 
@@ -9,4 +9,5 @@ sealed class NavScreen(val routing: String) {
   object AddLog : NavScreen("add_log")
 
   object ArtificialHorizon : NavScreen("artificial_horizon")
+  object PFD : NavScreen("primary_display")
 }
