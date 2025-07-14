@@ -1,4 +1,4 @@
-package dev.fanfly.apps.vellum.root
+package dev.fanfly.apps.vellum
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
