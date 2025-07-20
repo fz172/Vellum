@@ -8,17 +8,18 @@ import android.hardware.SensorManager
 import android.view.Surface
 import android.view.WindowManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.fanfly.apps.vellum.proto.AdharsData
 import dev.fanfly.apps.vellum.proto.adharsData
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
 @Singleton
 class AdharsSensorHub @Inject internal constructor(
   @ApplicationContext private val context: Context,
-) :
-  SensorEventListener {
+) : SensorEventListener {
 
   private val sensorManager: SensorManager = context.getSystemService(SensorManager::class.java)
 
@@ -33,7 +34,7 @@ class AdharsSensorHub @Inject internal constructor(
   private var rollOffset: Float = 0f
   private var rotation: Int = windowManager.defaultDisplay.rotation
   private var isZeroPositionSet: Boolean = false
-  private val gravity = DoubleArray(3)
+  private var lastKnownPitchRoll: AdharsData? = null
 
   init {
     calibrate()
@@ -57,6 +58,7 @@ class AdharsSensorHub @Inject internal constructor(
    */
   fun calibrate() {
     rotation = windowManager.defaultDisplay.rotation
+    lastKnownPitchRoll = null
     isZeroPositionSet = false
   }
 
@@ -100,6 +102,7 @@ class AdharsSensorHub @Inject internal constructor(
 
       // Apply a low-pass filter to isolate the gravity component of the remapped data.
       val alpha = 0.8f
+      val gravity = DoubleArray(3)
       gravity[0] = alpha * gravity[0] + (1 - alpha) * remappedAx
       gravity[1] = alpha * gravity[1] + (1 - alpha) * remappedAy
       gravity[2] = alpha * gravity[2] + (1 - alpha) * az // Z-axis is unaffected by this rotation
@@ -123,12 +126,27 @@ class AdharsSensorHub @Inject internal constructor(
       val relativePitch = absolutePitch - pitchOffset
       val relativeRoll = absoluteRoll - rollOffset
 
-      sensorUpdateListener?.onDataUpdate(
-        adharsData {
-          this.pitch = relativePitch
-          this.roll = relativeRoll
-        })
+      val newData = adharsData {
+        this.pitch = relativePitch
+        this.roll = relativeRoll
+      }
+      // Only update if the change is large enough to avoid jittering.
+      val oldData = lastKnownPitchRoll
+      if (oldData == null || abs(oldData.roll - newData.roll) > MIN_ROLL_UPDATE_DEGREE || abs(
+          oldData.pitch - newData.pitch
+        ) > MIN_PITCH_UPDATE_DEGREE
+      ) {
+        sensorUpdateListener?.onDataUpdate(
+          newData
+        )
+        lastKnownPitchRoll = newData
+      }
     }
+  }
+
+  companion object {
+    const val MIN_PITCH_UPDATE_DEGREE: Double = 1.0
+    const val MIN_ROLL_UPDATE_DEGREE: Double = 0.5
   }
 
 }

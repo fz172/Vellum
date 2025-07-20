@@ -36,4 +36,8 @@ class AdharsViewModel @Inject constructor(private val sensorHub: AdharsSensorHub
     }
   }
 
+  fun calibrate() {
+    sensorHub.calibrate()
+  }
+
 }

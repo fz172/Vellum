@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportHeight="512"
+    android:viewportWidth="512">
+
+  <!-- Sky (upper half) -->
+  <path
+      android:fillColor="#3596D6"
+      android:pathData="M96,96 h320 v160 h-320 z" />
+
+  <!-- Ground (lower half) -->
+  <path
+      android:fillColor="#8B5A2B"
+      android:pathData="M96,256 h320 v160 h-320 z" />
+
+  <!-- Horizon line -->
+  <path
+      android:pathData="M96,256 h320"
+      android:strokeColor="#FFFFFF"
+      android:strokeLineCap="round"
+      android:strokeWidth="16" />
+
+
+  <!-- Pitch lines -->
+  <path
+      android:pathData="M180,220 h40 M292,220 h40 M180,292 h40 M292,292 h40"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="12" />
+
+  <!-- Center vertical tick (roll marker) -->
+  <path
+      android:pathData="M256,140 v32 M256,340 v32"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="12" />
+</vector>

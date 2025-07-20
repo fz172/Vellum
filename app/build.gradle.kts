@@ -42,7 +42,8 @@ android {
 }
 
 dependencies {
-
+  implementation(libs.flogger)
+  implementation(libs.flogger.system.backend)
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)

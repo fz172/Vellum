@@ -1,7 +1,8 @@
 package dev.fanfly.apps.vellum.pfd
 
+import android.graphics.Color.WHITE
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -9,19 +10,27 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
+import dev.fanfly.apps.vellum.theme.COLOR_PFD_GROUND
+import dev.fanfly.apps.vellum.theme.COLOR_PFD_SKY
 import kotlin.math.hypot
 
 @Composable
 fun ArtificialHorizon(
   pitch: Float, // degrees
   roll: Float,  // degrees
-  modifier: Modifier = Modifier
-    .fillMaxWidth(),
-) {
+  modifier: Modifier = Modifier,
+  ) {
   Canvas(modifier = modifier) {
     val center = Offset(size.width / 2f, size.height / 2f)
     val pitchPxPerDeg = size.height / 60f // ±30° visible
     val pitchOffset = pitch * pitchPxPerDeg
+
+    val labelPaint by lazy {
+      Paint().apply {
+        color = WHITE
+        textSize = 30f
+      }
+    }
 
     // 🔥 Diagonal size: ensures full coverage during rotation
     val diagonal = hypot(size.width, size.height) * 4
@@ -30,14 +39,14 @@ fun ArtificialHorizon(
     rotate(-roll, pivot = center) {
       // Sky: cover entire diagonal area
       drawRect(
-        color = Color.Cyan,
+        color = COLOR_PFD_SKY,
         topLeft = Offset(center.x - diagonal / 2f, center.y - diagonal + pitchOffset),
         size = Size(diagonal, diagonal * 2f)
       )
 
       // Ground: also overfill downward
       drawRect(
-        color = Color(0xFF8B4513),
+        color = COLOR_PFD_GROUND,
         topLeft = Offset(center.x - diagonal / 2f, center.y + pitchOffset),
         size = Size(diagonal, diagonal * 2)
       )
@@ -69,19 +78,13 @@ fun ArtificialHorizon(
               it,
               center.x - lineWidth - 25f,
               y + 10f,
-              android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 30f
-              }
+              labelPaint
             )
             drawText(
               it,
               center.x + lineWidth + 5f,
               y + 10f,
-              android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 30f
-              }
+              labelPaint
             )
           }
         }
