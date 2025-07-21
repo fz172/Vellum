@@ -11,19 +11,18 @@ import com.google.common.flogger.FluentLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.fanfly.apps.vellum.proto.AdharsData
 import dev.fanfly.apps.vellum.proto.adharsData
-import java.lang.Math.toRadians
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.math.sqrt
 
 @Singleton
 class AdharsSensorHub
 @Inject
-internal constructor(@ApplicationContext private val context: Context) : SensorEventListener {
+internal constructor(
+    @ApplicationContext private val context: Context,
+) : SensorEventListener {
 
   private val sensorManager: SensorManager = context.getSystemService(SensorManager::class.java)
 
@@ -96,7 +95,7 @@ internal constructor(@ApplicationContext private val context: Context) : SensorE
           lastTimestamp = event.timestamp
           return
         } else {
-          val temp = (event.timestamp - lastTimestamp) * NANOSECONDS_TO_SECONDS
+          val temp = (event.timestamp - lastTimestamp) * NS2S
           lastTimestamp = event.timestamp
           temp
         }
@@ -110,7 +109,6 @@ internal constructor(@ApplicationContext private val context: Context) : SensorE
 
     // Get live screen rotation on every event to handle orientation changes.
     val rotation = windowManager.defaultDisplay.rotation
-    logger.atInfo().log("rotation: %d", rotation)
 
     when (rotation) {
       Surface.ROTATION_270 -> { // Landscape,tilted to the right
@@ -143,26 +141,17 @@ internal constructor(@ApplicationContext private val context: Context) : SensorE
     }
     val az = accelData[2] // Z-axis is not affected by screen rotation
 
-    // --- SENSOR FUSION with Gimbal Lock protection ---
-    // 1. Calculate pitch and roll from the reliable accelerometer
+    // --- SENSOR FUSION ---
+    // 1. Calculate pitch from the accelerometer.
     val accelPitch =
         Math.toDegrees(
                 atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble()))
             .toFloat()
 
-    // 2. Calculate a more robust roll from the accelerometer.
-    // This formula uses the calculated pitch to correct the roll calculation,
-    // making it stable across all pitch angles.
-    val pitchInRad = toRadians(accelPitch.toDouble())
-    val sinP = sin(pitchInRad)
-    val cosP = cos(pitchInRad)
-    val accelRoll =
-        Math.toDegrees(
-                atan2(
-                    remappedAx * cosP - az * sinP,
-                    remappedAx * sinP * sinP + remappedAy * sinP * cosP + az * cosP * cosP,
-                ))
-            .toFloat()
+    // 2. Calculate roll using the simple, standard formula.
+    // The instability of this formula at high pitch angles is handled by the
+    // gimbal lock protection logic in the fusion step below.
+    val accelRoll = Math.toDegrees(atan2(remappedAx.toDouble(), az.toDouble())).toFloat()
 
     if (!isZeroPositionSet) {
       // INITIALIZATION STEP:
@@ -185,18 +174,24 @@ internal constructor(@ApplicationContext private val context: Context) : SensorE
               (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
 
       if (abs(fusedPitch) < GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES) {
+        // In normal orientations, fuse roll using both sensors.
         fusedRoll =
             COMPLEMENTARY_FILTER_ALPHA * (fusedRoll + gyroRollChange) +
                 (1 - COMPLEMENTARY_FILTER_ALPHA) * accelRoll
       } else {
-        fusedRoll += gyroRollChange // Avoid drift in gimbal lock
+        // When near vertical (gimbal lock), trust only the gyroscope for
+        // roll to prevent drift.
+        fusedRoll += gyroRollChange
       }
     }
 
     // FINAL CALCULATION:
     // Report the fused orientation relative to the calibration offset.
     val relativePitch = fusedPitch - pitchOffset
-    val relativeRoll = fusedRoll - rollOffset
+    // To match the visual convention of the artificial horizon (rolling left is a negative value on
+    // the display, but the horizon tilts left which can be seen as positive),
+    // we invert the final roll value.
+    val relativeRoll = -(fusedRoll - rollOffset)
 
     val newData = adharsData {
       this.pitch = relativePitch
@@ -225,6 +220,6 @@ internal constructor(@ApplicationContext private val context: Context) : SensorE
     private const val MIN_ROLL_UPDATE_DEGREE: Double = 0.25
 
     // Converts nanoseconds to seconds.
-    private const val NANOSECONDS_TO_SECONDS = 1.0f / 1_000_000_000.0f
+    private const val NS2S = 1.0f / 1_000_000_000.0f
   }
 }

@@ -10,16 +10,17 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
+import dev.fanfly.apps.vellum.pfd.DisplayConfigs.PITCH_TICK_DEGREES
 import dev.fanfly.apps.vellum.theme.COLOR_PFD_GROUND
 import dev.fanfly.apps.vellum.theme.COLOR_PFD_SKY
 import kotlin.math.hypot
 
 @Composable
 fun ArtificialHorizon(
-  pitch: Float, // degrees
-  roll: Float,  // degrees
-  modifier: Modifier = Modifier,
-  ) {
+    pitch: Float, // degrees
+    roll: Float, // degrees
+    modifier: Modifier = Modifier,
+) {
   Canvas(modifier = modifier) {
     val center = Offset(size.width / 2f, size.height / 2f)
     val pitchPxPerDeg = size.height / 60f // ±30° visible
@@ -39,53 +40,44 @@ fun ArtificialHorizon(
     rotate(-roll, pivot = center) {
       // Sky: cover entire diagonal area
       drawRect(
-        color = COLOR_PFD_SKY,
-        topLeft = Offset(center.x - diagonal / 2f, center.y - diagonal + pitchOffset),
-        size = Size(diagonal, diagonal * 2f)
-      )
+          color = COLOR_PFD_SKY,
+          topLeft = Offset(center.x - diagonal / 2f, center.y - diagonal + pitchOffset),
+          size = Size(diagonal, diagonal * 2f))
 
       // Ground: also overfill downward
       drawRect(
-        color = COLOR_PFD_GROUND,
-        topLeft = Offset(center.x - diagonal / 2f, center.y + pitchOffset),
-        size = Size(diagonal, diagonal * 2)
-      )
+          color = COLOR_PFD_GROUND,
+          topLeft = Offset(center.x - diagonal / 2f, center.y + pitchOffset),
+          size = Size(diagonal, diagonal * 2))
 
       // Horizon line
       drawLine(
-        color = Color.White,
-        start = Offset(center.x - diagonal / 2f, center.y + pitchOffset),
-        end = Offset(center.x + diagonal / 2f, center.y + pitchOffset),
-        strokeWidth = 4f
-      )
+          color = Color.White,
+          start = Offset(center.x - diagonal / 2f, center.y + pitchOffset),
+          end = Offset(center.x + diagonal / 2f, center.y + pitchOffset),
+          strokeWidth = 4f)
+      val minDisplayPitch = pitch - DisplayConfigs.NUM_OF_TICKS_PITCH * PITCH_TICK_DEGREES
+      val maxDisplayPitch = pitch + DisplayConfigs.NUM_OF_TICKS_PITCH * PITCH_TICK_DEGREES
 
       // Pitch ladder (every 5° from -30 to +30)
-      for (i in -30..30 step 5) {
+      for (i in DisplayConfigs.MIN_PITCH..DisplayConfigs.MAX_PITCH step PITCH_TICK_DEGREES) {
+        if (i > maxDisplayPitch || i < minDisplayPitch) {
+          continue
+        }
         val y = center.y + pitchOffset - i * pitchPxPerDeg
         val lineWidth = if (i % 10 == 0) 60f else 30f
         val label = if (i != 0) i.toString() else null
 
         drawLine(
-          color = Color.White,
-          start = Offset(center.x - lineWidth, y),
-          end = Offset(center.x + lineWidth, y),
-          strokeWidth = 2f
-        )
+            color = Color.White,
+            start = Offset(center.x - lineWidth, y),
+            end = Offset(center.x + lineWidth, y),
+            strokeWidth = 2f)
 
         label?.let {
           drawContext.canvas.nativeCanvas.apply {
-            drawText(
-              it,
-              center.x - lineWidth - 25f,
-              y + 10f,
-              labelPaint
-            )
-            drawText(
-              it,
-              center.x + lineWidth + 5f,
-              y + 10f,
-              labelPaint
-            )
+            drawText(it, center.x - lineWidth - 25f, y + 10f, labelPaint)
+            drawText(it, center.x + lineWidth + 5f, y + 10f, labelPaint)
           }
         }
       }
@@ -93,16 +85,21 @@ fun ArtificialHorizon(
 
     // Fixed aircraft symbol (yellow wings)
     drawLine(
-      color = Color.Yellow,
-      start = Offset(center.x - 50f, center.y),
-      end = Offset(center.x + 50f, center.y),
-      strokeWidth = 6f
-    )
+        color = Color.Yellow,
+        start = Offset(center.x - 50f, center.y),
+        end = Offset(center.x + 50f, center.y),
+        strokeWidth = 6f)
     drawLine(
-      color = Color.Yellow,
-      start = Offset(center.x, center.y),
-      end = Offset(center.x, center.y + 20f),
-      strokeWidth = 6f
-    )
+        color = Color.Yellow,
+        start = Offset(center.x, center.y),
+        end = Offset(center.x, center.y + 20f),
+        strokeWidth = 6f)
   }
+}
+
+data object DisplayConfigs {
+  const val NUM_OF_TICKS_PITCH = 3
+  const val PITCH_TICK_DEGREES = 5
+  const val MIN_PITCH = -30
+  const val MAX_PITCH = 30
 }
