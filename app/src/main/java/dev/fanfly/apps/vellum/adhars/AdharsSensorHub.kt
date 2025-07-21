@@ -115,14 +115,14 @@ class AdharsSensorHub @Inject internal constructor(
     logger.atInfo().log("rotation: %d", rotation)
 
     when (rotation) {
-      Surface.ROTATION_90 -> { // Landscape, tilted to the left
+      Surface.ROTATION_270 -> { // Landscape,tilted to the right
         remappedAx = accelData[1]
         remappedAy = -accelData[0]
         remappedGx = gyroData[1]
         remappedGy = -gyroData[0]
       }
 
-      Surface.ROTATION_270 -> { // Landscape, tilted left
+      Surface.ROTATION_90 -> { // Landscape, tilted to the left
         remappedAx = -accelData[1]
         remappedAy = accelData[0]
         remappedGx = -gyroData[1]
@@ -148,7 +148,7 @@ class AdharsSensorHub @Inject internal constructor(
     // --- SENSOR FUSION with Gimbal Lock protection ---
     // 1. Calculate pitch and roll from the reliable accelerometer
     val accelPitch = Math.toDegrees(
-      atan2(remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble())
+      atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble())
     ).toFloat()
     val accelRoll = Math.toDegrees(atan2(-remappedAx.toDouble(), az.toDouble())).toFloat()
 
@@ -167,8 +167,9 @@ class AdharsSensorHub @Inject internal constructor(
       val gyroPitchChange = Math.toDegrees(remappedGx * dt.toDouble()).toFloat()
       val gyroRollChange = Math.toDegrees(remappedGy * dt.toDouble()).toFloat()
 
+      // The pitch change from the gyro also needs to be inverted to match the new convention.
       fusedPitch =
-        COMPLEMENTARY_FILTER_ALPHA * (fusedPitch + gyroPitchChange) + (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
+        COMPLEMENTARY_FILTER_ALPHA * (fusedPitch - gyroPitchChange) + (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
 
       if (abs(fusedPitch) < GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES) {
         fusedRoll =
@@ -204,7 +205,7 @@ class AdharsSensorHub @Inject internal constructor(
     private const val COMPLEMENTARY_FILTER_ALPHA = 0.98f
 
     // The pitch angle at which to engage gimbal lock protection.
-    private const val GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES = 80f
+    private const val GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES = 85f
 
     // Thresholds to prevent updating the UI for minuscule, imperceptible changes.
     private const val MIN_PITCH_UPDATE_DEGREE: Double = 0.25
