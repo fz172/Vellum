@@ -7,7 +7,7 @@
 
   <!-- Background with rounded corners -->
   <path
-      android:fillColor="#364146"
+      android:fillColor="#FFFFFF"
       android:pathData="M64,0 h384 a64,64 0 0 1 64,64 v384 a64,64 0 0 1 -64,64 h-384 a64,64 0 0 1 -64,-64 v-384 a64,64 0 0 1 64,-64 z" />
 
 </vector>
