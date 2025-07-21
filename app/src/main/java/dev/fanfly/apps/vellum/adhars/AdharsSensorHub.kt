@@ -21,9 +21,9 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 @Singleton
-class AdharsSensorHub @Inject internal constructor(
-  @ApplicationContext private val context: Context,
-) : SensorEventListener {
+class AdharsSensorHub
+@Inject
+internal constructor(@ApplicationContext private val context: Context) : SensorEventListener {
 
   private val sensorManager: SensorManager = context.getSystemService(SensorManager::class.java)
 
@@ -41,7 +41,6 @@ class AdharsSensorHub @Inject internal constructor(
   // Fused orientation values
   private var fusedPitch: Float = 0f
   private var fusedRoll: Float = 0f
-
 
   private var sensorUpdateListener: SensorUpdateListener? = null
 
@@ -68,10 +67,7 @@ class AdharsSensorHub @Inject internal constructor(
     sensorUpdateListener = null
   }
 
-  /**
-   * Allows external callers (like a ViewModel) to reset thes zero position
-   * on-demand, for example, when a user presses a "re-calibrate" button.
-   */
+  /** Allows external callers (like a ViewModel) to reset the zero position on-demand. */
   fun calibrate() {
     accelData.fill(0f)
     gyroData.fill(0f)
@@ -84,8 +80,7 @@ class AdharsSensorHub @Inject internal constructor(
     lastTimestamp = 0L
   }
 
-  override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-  }
+  override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
 
   override fun onSensorChanged(event: SensorEvent) {
     // Store raw sensor data based on the event type
@@ -96,14 +91,15 @@ class AdharsSensorHub @Inject internal constructor(
     }
 
     // Wait for the next event to get a valid delta time
-    val dt = if (lastTimestamp == 0L) {
-      lastTimestamp = event.timestamp
-      return
-    } else {
-      val temp = (event.timestamp - lastTimestamp) * NS2S
-      lastTimestamp = event.timestamp
-      temp
-    }
+    val dt =
+        if (lastTimestamp == 0L) {
+          lastTimestamp = event.timestamp
+          return
+        } else {
+          val temp = (event.timestamp - lastTimestamp) * NANOSECONDS_TO_SECONDS
+          lastTimestamp = event.timestamp
+          temp
+        }
 
     // Remap accelerometer and gyroscope data so that their axes are relative
     // to the screen's current orientation, not the device's physical orientation.
@@ -111,7 +107,6 @@ class AdharsSensorHub @Inject internal constructor(
     val remappedAy: Float
     val remappedGx: Float
     val remappedGy: Float
-
 
     // Get live screen rotation on every event to handle orientation changes.
     val rotation = windowManager.defaultDisplay.rotation
@@ -150,9 +145,10 @@ class AdharsSensorHub @Inject internal constructor(
 
     // --- SENSOR FUSION with Gimbal Lock protection ---
     // 1. Calculate pitch and roll from the reliable accelerometer
-    val accelPitch = Math.toDegrees(
-      atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble())
-    ).toFloat()
+    val accelPitch =
+        Math.toDegrees(
+                atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble()))
+            .toFloat()
 
     // 2. Calculate a more robust roll from the accelerometer.
     // This formula uses the calculated pitch to correct the roll calculation,
@@ -160,12 +156,13 @@ class AdharsSensorHub @Inject internal constructor(
     val pitchInRad = toRadians(accelPitch.toDouble())
     val sinP = sin(pitchInRad)
     val cosP = cos(pitchInRad)
-    val accelRoll = Math.toDegrees(
-      atan2(
-        remappedAx * cosP - az * sinP,
-        remappedAx * sinP * sinP + remappedAy * sinP * cosP + az * cosP * cosP
-      )
-    ).toFloat()
+    val accelRoll =
+        Math.toDegrees(
+                atan2(
+                    remappedAx * cosP - az * sinP,
+                    remappedAx * sinP * sinP + remappedAy * sinP * cosP + az * cosP * cosP,
+                ))
+            .toFloat()
 
     if (!isZeroPositionSet) {
       // INITIALIZATION STEP:
@@ -184,11 +181,13 @@ class AdharsSensorHub @Inject internal constructor(
 
       // The pitch change from the gyro also needs to be inverted to match the new convention.
       fusedPitch =
-        COMPLEMENTARY_FILTER_ALPHA * (fusedPitch - gyroPitchChange) + (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
+          COMPLEMENTARY_FILTER_ALPHA * (fusedPitch - gyroPitchChange) +
+              (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
 
       if (abs(fusedPitch) < GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES) {
         fusedRoll =
-          COMPLEMENTARY_FILTER_ALPHA * (fusedRoll + gyroRollChange) + (1 - COMPLEMENTARY_FILTER_ALPHA) * accelRoll
+            COMPLEMENTARY_FILTER_ALPHA * (fusedRoll + gyroRollChange) +
+                (1 - COMPLEMENTARY_FILTER_ALPHA) * accelRoll
       } else {
         fusedRoll += gyroRollChange // Avoid drift in gimbal lock
       }
@@ -206,9 +205,8 @@ class AdharsSensorHub @Inject internal constructor(
 
     val oldData = lastKnownPitchRoll
     if (oldData == null ||
-      abs(oldData.roll - newData.roll) > MIN_ROLL_UPDATE_DEGREE ||
-      abs(oldData.pitch - newData.pitch) > MIN_PITCH_UPDATE_DEGREE
-    ) {
+        abs(oldData.roll - newData.roll) > MIN_ROLL_UPDATE_DEGREE ||
+        abs(oldData.pitch - newData.pitch) > MIN_PITCH_UPDATE_DEGREE) {
       sensorUpdateListener?.onDataUpdate(newData)
       lastKnownPitchRoll = newData
     }
@@ -227,7 +225,6 @@ class AdharsSensorHub @Inject internal constructor(
     private const val MIN_ROLL_UPDATE_DEGREE: Double = 0.25
 
     // Converts nanoseconds to seconds.
-    private const val NS2S = 1.0f / 1_000_000_000.0f
+    private const val NANOSECONDS_TO_SECONDS = 1.0f / 1_000_000_000.0f
   }
-
 }
