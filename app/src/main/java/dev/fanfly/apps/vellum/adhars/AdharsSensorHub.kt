@@ -11,10 +11,13 @@ import com.google.common.flogger.FluentLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.fanfly.apps.vellum.proto.AdharsData
 import dev.fanfly.apps.vellum.proto.adharsData
+import java.lang.Math.toRadians
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 @Singleton
@@ -150,7 +153,19 @@ class AdharsSensorHub @Inject internal constructor(
     val accelPitch = Math.toDegrees(
       atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble())
     ).toFloat()
-    val accelRoll = Math.toDegrees(atan2(-remappedAx.toDouble(), az.toDouble())).toFloat()
+
+    // 2. Calculate a more robust roll from the accelerometer.
+    // This formula uses the calculated pitch to correct the roll calculation,
+    // making it stable across all pitch angles.
+    val pitchInRad = toRadians(accelPitch.toDouble())
+    val sinP = sin(pitchInRad)
+    val cosP = cos(pitchInRad)
+    val accelRoll = Math.toDegrees(
+      atan2(
+        remappedAx * cosP - az * sinP,
+        remappedAx * sinP * sinP + remappedAy * sinP * cosP + az * cosP * cosP
+      )
+    ).toFloat()
 
     if (!isZeroPositionSet) {
       // INITIALIZATION STEP:
