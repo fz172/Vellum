@@ -21,16 +21,20 @@ import kotlin.math.sqrt
 class AdharsSensorHub
 @Inject
 internal constructor(
-    @ApplicationContext private val context: Context,
+  @param:ApplicationContext private val context: Context,
 ) : SensorEventListener {
 
-  private val sensorManager: SensorManager = context.getSystemService(SensorManager::class.java)
+  private val sensorManager: SensorManager =
+    context.getSystemService(SensorManager::class.java)
 
   // Get the WindowManager to detect screen rotation.
-  private val windowManager = context.getSystemService(WindowManager::class.java)
+  private val windowManager =
+    context.getSystemService(WindowManager::class.java)
 
-  private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-  private val gyroscope: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+  private val accelerometer: Sensor? =
+    sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+  private val gyroscope: Sensor? =
+    sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
   // --- State Variables ---
   // Raw sensor data arrays
@@ -57,8 +61,16 @@ internal constructor(
     // Reset the zero position each time listening starts.
     isZeroPositionSet = false
     sensorUpdateListener = listener
-    sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
-    sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI)
+    sensorManager.registerListener(
+      this,
+      accelerometer,
+      SensorManager.SENSOR_DELAY_UI
+    )
+    sensorManager.registerListener(
+      this,
+      gyroscope,
+      SensorManager.SENSOR_DELAY_UI
+    )
   }
 
   fun stopListening() {
@@ -84,21 +96,28 @@ internal constructor(
   override fun onSensorChanged(event: SensorEvent) {
     // Store raw sensor data based on the event type
     when (event.sensor.type) {
-      Sensor.TYPE_ACCELEROMETER -> System.arraycopy(event.values, 0, accelData, 0, 3)
+      Sensor.TYPE_ACCELEROMETER -> System.arraycopy(
+        event.values,
+        0,
+        accelData,
+        0,
+        3
+      )
+
       Sensor.TYPE_GYROSCOPE -> System.arraycopy(event.values, 0, gyroData, 0, 3)
       else -> return
     }
 
     // Wait for the next event to get a valid delta time
     val dt =
-        if (lastTimestamp == 0L) {
-          lastTimestamp = event.timestamp
-          return
-        } else {
-          val temp = (event.timestamp - lastTimestamp) * NS2S
-          lastTimestamp = event.timestamp
-          temp
-        }
+      if (lastTimestamp == 0L) {
+        lastTimestamp = event.timestamp
+        return
+      } else {
+        val temp = (event.timestamp - lastTimestamp) * NS2S
+        lastTimestamp = event.timestamp
+        temp
+      }
 
     // Remap accelerometer and gyroscope data so that their axes are relative
     // to the screen's current orientation, not the device's physical orientation.
@@ -144,14 +163,19 @@ internal constructor(
     // --- SENSOR FUSION ---
     // 1. Calculate pitch from the accelerometer.
     val accelPitch =
-        Math.toDegrees(
-                atan2(-remappedAy.toDouble(), sqrt(remappedAx * remappedAx + az * az).toDouble()))
-            .toFloat()
+      Math.toDegrees(
+        atan2(
+          -remappedAy.toDouble(),
+          sqrt(remappedAx * remappedAx + az * az).toDouble()
+        )
+      )
+        .toFloat()
 
     // 2. Calculate roll using the simple, standard formula.
     // The instability of this formula at high pitch angles is handled by the
     // gimbal lock protection logic in the fusion step below.
-    val accelRoll = Math.toDegrees(atan2(remappedAx.toDouble(), az.toDouble())).toFloat()
+    val accelRoll =
+      Math.toDegrees(atan2(remappedAx.toDouble(), az.toDouble())).toFloat()
 
     if (!isZeroPositionSet) {
       // INITIALIZATION STEP:
@@ -170,14 +194,14 @@ internal constructor(
 
       // The pitch change from the gyro also needs to be inverted to match the new convention.
       fusedPitch =
-          COMPLEMENTARY_FILTER_ALPHA * (fusedPitch - gyroPitchChange) +
-              (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
+        COMPLEMENTARY_FILTER_ALPHA * (fusedPitch - gyroPitchChange) +
+            (1 - COMPLEMENTARY_FILTER_ALPHA) * accelPitch
 
       if (abs(fusedPitch) < GIMBAL_LOCK_PITCH_THRESHOLD_DEGREES) {
         // In normal orientations, fuse roll using both sensors.
         fusedRoll =
-            COMPLEMENTARY_FILTER_ALPHA * (fusedRoll + gyroRollChange) +
-                (1 - COMPLEMENTARY_FILTER_ALPHA) * accelRoll
+          COMPLEMENTARY_FILTER_ALPHA * (fusedRoll + gyroRollChange) +
+              (1 - COMPLEMENTARY_FILTER_ALPHA) * accelRoll
       } else {
         // When near vertical (gimbal lock), trust only the gyroscope for
         // roll to prevent drift.
@@ -200,8 +224,9 @@ internal constructor(
 
     val oldData = lastKnownPitchRoll
     if (oldData == null ||
-        abs(oldData.roll - newData.roll) > MIN_ROLL_UPDATE_DEGREE ||
-        abs(oldData.pitch - newData.pitch) > MIN_PITCH_UPDATE_DEGREE) {
+      abs(oldData.roll - newData.roll) > MIN_ROLL_UPDATE_DEGREE ||
+      abs(oldData.pitch - newData.pitch) > MIN_PITCH_UPDATE_DEGREE
+    ) {
       sensorUpdateListener?.onDataUpdate(newData)
       lastKnownPitchRoll = newData
     }
