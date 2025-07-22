@@ -22,26 +22,29 @@ fun PrimaryDisplay(adharsViewModel: AdharsViewModel = hiltViewModel()) {
   val adharsData = adharsViewModel.adharsData.collectAsState()
 
   Box(
-      modifier =
-          Modifier.fillMaxSize()
-              // Apply safe drawing insets to the Box to keep content
-              // from being obscured by system UI.
-              .windowInsetsPadding(WindowInsets.safeDrawing)) {
-        ArtificialHorizon(
-            pitch = adharsData.value.pitch,
-            roll = adharsData.value.roll,
-            modifier = Modifier.fillMaxSize(),
-        )
+    modifier =
+      Modifier
+        .fillMaxSize()
+        // Apply safe drawing insets to the Box to keep content
+        // from being obscured by system UI.
+        .windowInsetsPadding(WindowInsets.safeDrawing)
+  ) {
+    ArtificialHorizon(
+      pitch = adharsData.value.pitch,
+      roll = adharsData.value.roll,
+      modifier = Modifier.fillMaxSize(),
+    )
 
-        // The Button is aligned to the top end of the Box.
-        Button(
-            // This will call a method on your ViewModel to reset the sensor offsets.
-            onClick = { adharsViewModel.calibrate() },
-            modifier =
-                Modifier.align(Alignment.TopEnd)
-                    .padding(16.dp) // Add padding to avoid touching the screen edges.
-            ) {
-              Text("Calibrate")
-            }
-      }
+    // The Button is aligned to the top end of the Box.
+    Button(
+      // This will call a method on your ViewModel to reset the sensor offsets.
+      onClick = { adharsViewModel.calibrate() },
+      modifier =
+        Modifier
+          .align(Alignment.TopEnd)
+          .padding(16.dp) // Add padding to avoid touching the screen edges.
+    ) {
+      Text("Calibrate")
+    }
+  }
 }
